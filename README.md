@@ -120,3 +120,7 @@ Deployed on Sepolia testnet. Contract handles:
 - Storing verification records
 - Retrieving verification data
 - Immutable blockchain storage
+
+## Licence
+
+MIT License. See [LICENSE](./LICENSE) for details.
