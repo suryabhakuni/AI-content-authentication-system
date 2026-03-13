@@ -4,11 +4,11 @@ AI-powered content authentication system with blockchain verification.
 
 ## Features
 
-- 🤖 AI Detection for text and images
-- 🔗 Blockchain verification on Ethereum (Sepolia testnet)
-- 📜 Immutable certificate generation
-- ✅ Content verification and validation
-- 🎨 Modern, responsive UI with dark mode
+- AI Detection for text and images
+- Blockchain verification on Ethereum (Sepolia testnet)
+- Immutable certificate generation
+- Content verification and validation
+- Modern, responsive UI with dark mode
 
 ## Tech Stack
 
