@@ -32,7 +32,6 @@ export const ResultCard = ({ result }) => {
   const [blockchainRecord, setBlockchainRecord] = React.useState(null);
   const [confirmations, setConfirmations] = React.useState(0);
 
-  // Get current network information
   const getNetworkInfo = () => {
     const status = blockchainService.getConnectionStatus();
     if (!status.network) return null;
@@ -40,7 +39,6 @@ export const ResultCard = ({ result }) => {
     return blockchainService.getNetworkInfo(status.network.chainId);
   };
 
-  // Get blockchain explorer URL based on network
   const getExplorerUrl = () => {
     if (!result.blockchainTxHash || !result.storedOnBlockchain) return null;
 
@@ -56,10 +54,8 @@ export const ResultCard = ({ result }) => {
     return `${networkInfo.blockExplorer}/tx/${result.blockchainTxHash}`;
   };
 
-  // Calculate confirmations (simulated - in real app would query blockchain)
   React.useEffect(() => {
     if (result.storedOnBlockchain && result.blockNumber) {
-      // Simulate confirmation count increasing
       const interval = setInterval(() => {
         setConfirmations((prev) => (prev < 12 ? prev + 1 : prev));
       }, 2000);
@@ -71,7 +67,7 @@ export const ResultCard = ({ result }) => {
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: "✅ Copied!",
+      title: "Copied!",
       description: `${label} copied to clipboard.`,
       variant: "success",
       duration: 3000,
@@ -88,7 +84,7 @@ export const ResultCard = ({ result }) => {
       if (record.exists) {
         setBlockchainRecord(record);
         toast({
-          title: "✅ Blockchain Record Found",
+          title: "Blockchain Record Found",
           description: `Verified by ${record.verifier.slice(
             0,
             6
@@ -123,17 +119,14 @@ export const ResultCard = ({ result }) => {
     const networkInfo = getNetworkInfo();
 
     const certificate = {
-      // Certificate Metadata
       certificateId: result.certificateId,
       certificateVersion: "1.0",
       issuedAt: result.timestamp,
       issuer: "AI Authentic Guard",
 
-      // Content Information
       contentHash: result.contentHash,
       hashAlgorithm: "SHA-256",
 
-      // Verification Results
       verification: {
         isAuthentic: result.isAuthentic,
         authenticity: result.isAuthentic ? "Authentic" : "Potentially Modified",
@@ -157,7 +150,6 @@ export const ResultCard = ({ result }) => {
         }),
       },
 
-      // Blockchain Information (if stored)
       ...(result.storedOnBlockchain && {
         blockchain: {
           stored: true,
@@ -186,7 +178,6 @@ export const ResultCard = ({ result }) => {
         },
       }),
 
-      // Retrieved Blockchain Record (if queried)
       ...(blockchainRecord &&
         blockchainRecord.exists && {
           blockchainVerification: {
@@ -203,14 +194,12 @@ export const ResultCard = ({ result }) => {
           },
         }),
 
-      // Certificate Validity
       validity: {
         validFrom: result.timestamp,
         validUntil: "Permanent (Blockchain Immutable)",
         canBeVerified: result.storedOnBlockchain,
       },
 
-      // Verification Instructions
       verificationInstructions: result.storedOnBlockchain
         ? {
             method: "Blockchain Verification",
@@ -239,7 +228,7 @@ export const ResultCard = ({ result }) => {
     URL.revokeObjectURL(url);
 
     toast({
-      title: "✅ Certificate Downloaded",
+      title: "Certificate Downloaded",
       description: result.storedOnBlockchain
         ? "Blockchain-verified certificate saved to your device."
         : "Authentication certificate saved to your device.",
@@ -331,7 +320,6 @@ export const ResultCard = ({ result }) => {
         </CardHeader>
 
         <CardContent className="space-y-8 pt-6">
-          {/* AI Detection Details Section */}
           {(result.modelName || result.processingTime) && (
             <div className="p-5 bg-purple-50 dark:bg-purple-900/10 rounded-lg border-2 border-purple-200 dark:border-purple-800">
               <div className="flex items-center gap-2 mb-4">
@@ -377,8 +365,6 @@ export const ResultCard = ({ result }) => {
                       <div className="flex-1 h-2 bg-purple-200 dark:bg-purple-900 rounded-full overflow-hidden">
                         <div
                           className={`h-full transition-all duration-500 ${
-                            // If authentic (good): high confidence = green
-                            // If flagged (bad): high confidence = red
                             result.isAuthentic
                               ? result.confidence >= 80
                                 ? "bg-green-500"
@@ -402,7 +388,6 @@ export const ResultCard = ({ result }) => {
                 </div>
               </div>
 
-              {/* Confidence Explanation */}
               <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-800">
                 <p className="text-xs text-purple-700 dark:text-purple-300 leading-relaxed">
                   {result.confidence >= 80 && (
@@ -436,7 +421,6 @@ export const ResultCard = ({ result }) => {
             </div>
           )}
 
-          {/* Blockchain Verification Section */}
           {result.storedOnBlockchain && (
             <div className="p-5 bg-blue-50 dark:bg-blue-900/10 rounded-lg border-2 border-blue-200 dark:border-blue-800">
               <div className="flex items-center justify-between mb-4">
@@ -541,13 +525,12 @@ export const ResultCard = ({ result }) => {
                 )}
               </div>
 
-              {/* Status indicator */}
               <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800">
                 <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300">
                   <Shield size={14} />
                   <span className="font-medium">
                     {confirmations >= 12
-                      ? "✓ Fully Confirmed - Immutably Stored"
+                      ? "Fully Confirmed - Immutably Stored"
                       : confirmations > 0
                       ? `Confirming... (${confirmations}/12 blocks)`
                       : "Pending Confirmation"}
@@ -557,7 +540,6 @@ export const ResultCard = ({ result }) => {
             </div>
           )}
 
-          {/* Authenticity Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-5">
               <div>
@@ -633,7 +615,6 @@ export const ResultCard = ({ result }) => {
             </div>
           </div>
 
-          {/* Blockchain Record Retrieved Section */}
           {blockchainRecord && blockchainRecord.exists && (
             <div className="p-5 bg-green-50 dark:bg-green-900/10 rounded-lg border-2 border-green-200 dark:border-green-800">
               <div className="flex items-center gap-2 mb-4">
@@ -684,7 +665,6 @@ export const ResultCard = ({ result }) => {
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex flex-wrap gap-3 pt-4 border-t border-border">
             <Button
               onClick={downloadCertificate}
@@ -725,7 +705,6 @@ export const ResultCard = ({ result }) => {
             )}
           </div>
 
-          {/* Additional Info */}
           {!result.isAuthentic && (
             <div className="p-5 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-2 border-yellow-200 dark:border-yellow-800">
               <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-3 text-base">

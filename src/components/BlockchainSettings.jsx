@@ -181,7 +181,6 @@ export const BlockchainSettings = ({ onClose }) => {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Network Selection */}
           <div className="space-y-2">
             <Label htmlFor="network" className="flex items-center gap-2">
               <Network className="h-4 w-4" />
@@ -211,7 +210,6 @@ export const BlockchainSettings = ({ onClose }) => {
             </Select>
           </div>
 
-          {/* Contract Address */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <LinkIcon className="h-4 w-4" />
@@ -245,7 +243,6 @@ export const BlockchainSettings = ({ onClose }) => {
             </div>
           </div>
 
-          {/* RPC Status */}
           <div className="space-y-2">
             <Label>Connection Status</Label>
             <div className="flex items-center gap-2 rounded bg-muted px-3 py-2">
@@ -259,7 +256,6 @@ export const BlockchainSettings = ({ onClose }) => {
             </div>
           </div>
 
-          {/* Mock Mode Toggle */}
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
               <Label htmlFor="mock-mode" className="text-base">
@@ -276,7 +272,6 @@ export const BlockchainSettings = ({ onClose }) => {
             />
           </div>
 
-          {/* Faucet Link (only for testnets) */}
           {faucetInfo && (
             <div className="space-y-2">
               <Label>Need Test Tokens?</Label>
@@ -294,7 +289,6 @@ export const BlockchainSettings = ({ onClose }) => {
             </div>
           )}
 
-          {/* Network Info */}
           {currentNetwork && (
             <div className="rounded-lg bg-muted p-4 space-y-2">
               <h4 className="text-sm font-medium">Network Information</h4>
@@ -322,7 +316,6 @@ export const BlockchainSettings = ({ onClose }) => {
             </div>
           )}
 
-          {/* Refresh Button */}
           <Button
             variant="secondary"
             className="w-full"

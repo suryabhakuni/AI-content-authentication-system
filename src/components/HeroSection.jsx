@@ -11,7 +11,6 @@ export const HeroSection = () => {
 
   return (
     <section className="min-h-screen flex items-center justify-center relative overflow-hidden py-20">
-      {/* Background Pattern */}
       <div className="absolute inset-0 subtle-gradient opacity-30" />
 
       <div className="relative z-10 text-center max-w-5xl mx-auto px-6">
@@ -103,7 +102,6 @@ export const HeroSection = () => {
         </motion.div>
       </div>
 
-      {/* Animated scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

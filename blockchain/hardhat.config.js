@@ -13,7 +13,6 @@ module.exports = {
     },
   },
   networks: {
-    // Local Hardhat network
     hardhat: {
       chainId: 31337,
       mining: {
@@ -21,12 +20,10 @@ module.exports = {
         interval: 0,
       },
     },
-    // Local Hardhat node
     localhost: {
       url: "http://127.0.0.1:8545",
       chainId: 31337,
     },
-    // Sepolia testnet
     sepolia: {
       url: process.env.SEPOLIA_RPC_URL || "https://rpc.sepolia.org",
       accounts:
@@ -36,7 +33,6 @@ module.exports = {
           : [],
       chainId: 11155111,
     },
-    // Ethereum mainnet (for future production)
     mainnet: {
       url: process.env.MAINNET_RPC_URL || "https://eth.llamarpc.com",
       accounts:

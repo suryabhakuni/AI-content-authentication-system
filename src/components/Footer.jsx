@@ -23,7 +23,6 @@ export const Footer = () => {
           transition={{ duration: 0.6 }}
           className="text-center space-y-8"
         >
-          {/* Project Info */}
           <div>
             <div className="flex items-center justify-center gap-3 mb-4">
               <img src={logo} alt="Logo" className="h-10 w-10 object-contain" />
@@ -37,8 +36,6 @@ export const Footer = () => {
               authenticity verification.
             </p>
           </div>
-
-          {/* Tech Stack */}
           <div>
             <h4 className="font-semibold mb-4">Built with</h4>
             <div className="flex flex-wrap justify-center gap-2">
@@ -56,8 +53,6 @@ export const Footer = () => {
               ))}
             </div>
           </div>
-
-          {/* Links */}
           <div className="flex justify-center space-x-6">
             <a
               href="https://github.com/suryabhakuni/Ai-content-authentication-system"

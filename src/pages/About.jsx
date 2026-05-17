@@ -34,7 +34,6 @@ const About = () => {
   return (
     <div className="min-h-screen py-20">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -50,7 +49,6 @@ const About = () => {
           </p>
         </motion.div>
 
-        {/* Mission Statement */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -72,7 +70,6 @@ const About = () => {
           </Card>
         </motion.div>
 
-        {/* Features Grid */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -115,7 +112,6 @@ const About = () => {
           })}
         </motion.div>
 
-        {/* Technical Overview */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,7 +164,6 @@ const About = () => {
           </Card>
         </motion.div>
 
-        {/* Academic Context */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

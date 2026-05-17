@@ -28,14 +28,12 @@ export const Navbar = () => {
     { name: "About", path: "/about" },
   ];
 
-  // Check connection status on mount
   useEffect(() => {
     const status = blockchainService.getConnectionStatus();
     if (status.isConnected) {
       setAccount(status.account);
       setNetwork(status.network);
 
-      // Initialize contract if wallet is already connected
       const networkKey =
         blockchainService.getNetworkInfo(status.network?.chainId)?.key ||
         "sepolia";
@@ -43,11 +41,9 @@ export const Navbar = () => {
 
       if (contractAddress && contractAddress !== "") {
         blockchainService.initializeContract(CONTRACT_ABI, contractAddress);
-        console.log("✅ Contract initialized on mount:", contractAddress);
       }
     }
 
-    // Listen for wallet events
     const handleAccountChanged = (event) => {
       setAccount(event.detail.account);
       toast({
@@ -99,7 +95,6 @@ export const Navbar = () => {
       setAccount(result.address);
       setNetwork(result.network);
 
-      // Initialize contract with ABI and address based on network
       const networkKey =
         blockchainService.getNetworkInfo(result.network.chainId)?.key ||
         "sepolia";
@@ -107,12 +102,8 @@ export const Navbar = () => {
 
       if (contractAddress && contractAddress !== "") {
         blockchainService.initializeContract(CONTRACT_ABI, contractAddress);
-        console.log("✅ Contract initialized:", contractAddress);
-      } else {
-        console.warn("⚠️ No contract address found for network:", networkKey);
       }
 
-      // Dispatch event to notify other components
       window.dispatchEvent(
         new CustomEvent("accountChanged", {
           detail: { account: result.address },
@@ -127,8 +118,6 @@ export const Navbar = () => {
         )}...${result.address.slice(-4)}`,
       });
     } catch (error) {
-      console.error("Wallet connection error:", error);
-
       if (error.message.includes("MetaMask is not installed")) {
         toast({
           title: "MetaMask Not Found",
@@ -177,7 +166,6 @@ export const Navbar = () => {
     <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border/40">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
           <Link
             to="/"
             className="flex items-center gap-3 text-lg font-semibold text-foreground hover:text-primary transition-fast"
@@ -186,7 +174,6 @@ export const Navbar = () => {
             <span className="hidden sm:inline">AI Content Authenticator</span>
           </Link>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
               <Link
@@ -210,7 +197,6 @@ export const Navbar = () => {
             ))}
           </div>
 
-          {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-3">
             <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
               <DialogTrigger asChild>
@@ -255,7 +241,6 @@ export const Navbar = () => {
             </Button>
           </div>
 
-          {/* Mobile Menu Button */}
           <Button
             variant="ghost"
             size="sm"
@@ -267,11 +252,9 @@ export const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -281,7 +264,6 @@ export const Navbar = () => {
               onClick={() => setIsOpen(false)}
             />
 
-            {/* Menu Panel */}
             <motion.div
               initial={{ opacity: 0, x: "100%" }}
               animate={{ opacity: 1, x: 0 }}
@@ -292,7 +274,6 @@ export const Navbar = () => {
                 backgroundColor: "#ffffff",
               }}
             >
-              {/* Close Button */}
               <div className="absolute top-4 right-4 z-10">
                 <Button
                   variant="ghost"
@@ -368,7 +349,6 @@ export const Navbar = () => {
                   </Button>
                 </div>
 
-                {/* Settings Dialog for Mobile */}
                 <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
                   <DialogContent className="p-0 max-w-md">
                     <BlockchainSettings

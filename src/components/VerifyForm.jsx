@@ -25,7 +25,6 @@ export const VerifyForm = () => {
   });
   const { toast } = useToast();
 
-  // Validation functions
   const validateCertificateId = (value) => {
     if (!value.trim()) return "";
 
@@ -39,18 +38,15 @@ export const VerifyForm = () => {
   const validateContentHash = (value) => {
     if (!value.trim()) return "";
 
-    // Check if it starts with 0x
     if (!value.startsWith("0x")) {
       return "Content hash must start with '0x'";
     }
 
-    // Check if it's valid hex (0x followed by hex characters)
     const hexPattern = /^0x[0-9a-fA-F]+$/;
     if (!hexPattern.test(value)) {
       return "Invalid hash format (must be hexadecimal)";
     }
 
-    // Check length (typical hash is 66 characters: 0x + 64 hex chars)
     if (value.length < 10) {
       return "Hash too short";
     }
@@ -58,11 +54,9 @@ export const VerifyForm = () => {
     return "";
   };
 
-  // Enhanced error handling function
   const handleVerificationError = (error) => {
     console.error("Verification error:", error);
 
-    // Wallet connection errors
     if (
       error.message?.includes("wallet") ||
       error.message?.includes("MetaMask") ||
@@ -78,7 +72,6 @@ export const VerifyForm = () => {
       return;
     }
 
-    // Network connection errors
     if (
       error.message?.includes("network") ||
       error.message?.includes("fetch") ||
@@ -104,7 +97,6 @@ export const VerifyForm = () => {
       return;
     }
 
-    // Wrong network errors
     if (
       error.message?.includes("chain") ||
       error.message?.includes("network") ||
@@ -120,7 +112,6 @@ export const VerifyForm = () => {
       return;
     }
 
-    // RPC errors
     if (error.code === -32603 || error.message?.includes("RPC")) {
       toast({
         title: "Blockchain Connection Error",
@@ -164,7 +155,6 @@ export const VerifyForm = () => {
   };
 
   const handleVerify = async () => {
-    // Check if at least one field is filled
     if (!certificateId.trim() && !contentHash.trim()) {
       toast({
         title: "Missing Information",
@@ -176,7 +166,6 @@ export const VerifyForm = () => {
       return;
     }
 
-    // Validate inputs
     const certError = validateCertificateId(certificateId);
     const hashError = validateContentHash(contentHash);
 
@@ -195,23 +184,19 @@ export const VerifyForm = () => {
       return;
     }
 
-    // Clear validation errors
     setValidationErrors({ certificateId: "", contentHash: "" });
 
     setLoading(true);
     try {
-      // Use content hash for blockchain lookup (certificate ID is just for display)
       const hashToVerify = contentHash.trim() || certificateId.trim();
 
-      console.log("🔍 Verifying hash:", hashToVerify);
+      console.log("Verifying hash:", hashToVerify);
 
-      // Query blockchain for verification record
       const record = await blockchainService.getVerificationRecord(
         hashToVerify
       );
 
       if (record && record.exists) {
-        // Record found on blockchain
         const networkInfo = await blockchainService.getCurrentNetworkInfo();
 
         const result = {
@@ -225,11 +210,10 @@ export const VerifyForm = () => {
           blockExplorer: networkInfo.blockExplorer,
         };
 
-        console.log("✅ Verification result:", result);
+        console.log("Verification result:", result);
         setResult(result);
-
         toast({
-          title: "✅ Verification Complete",
+          title: "Verification Complete",
           description: `Certificate found on blockchain! Content is ${
             record.isAuthentic ? "AUTHENTIC" : "AI-GENERATED"
           } (${record.confidence}% confidence)`,
@@ -237,7 +221,6 @@ export const VerifyForm = () => {
           duration: 5000,
         });
       } else {
-        // Enhanced "Certificate Not Found" error message
         const networkInfo = await blockchainService.getCurrentNetworkInfo();
         toast({
           title: "Certificate Not Found",
@@ -391,15 +374,14 @@ export const VerifyForm = () => {
 
               <div className="text-center text-sm text-muted-foreground space-y-1">
                 <p>
-                  🔒 All verifications are performed directly on the blockchain
+                  All verifications are performed directly on the blockchain
                 </p>
-                <p>📋 No personal information is stored or transmitted</p>
+                <p>No personal information is stored or transmitted</p>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Results Section */}
         {result && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

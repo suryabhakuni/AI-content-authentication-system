@@ -1,8 +1,3 @@
-/**
- * Testnet Helper Utilities
- * Provides information about testnets and faucets
- */
-
 export const TESTNETS = {
   sepolia: {
     name: "Sepolia",
@@ -27,11 +22,6 @@ export const TESTNETS = {
   },
 };
 
-/**
- * Get recommended faucet for a network
- * @param {string} networkKey - Network key (sepolia, hardhat, etc.)
- * @returns {Object|null} Faucet information or null
- */
 export const getRecommendedFaucet = (networkKey) => {
   const network = TESTNETS[networkKey];
   if (!network || !network.faucets || network.faucets.length === 0) {
@@ -40,21 +30,11 @@ export const getRecommendedFaucet = (networkKey) => {
   return network.faucets[0];
 };
 
-/**
- * Get all faucets for a network
- * @param {string} networkKey - Network key
- * @returns {Array} Array of faucet objects
- */
 export const getAllFaucets = (networkKey) => {
   const network = TESTNETS[networkKey];
   return network?.faucets || [];
 };
 
-/**
- * Check if network is a testnet
- * @param {string} networkKey - Network key
- * @returns {boolean} True if testnet
- */
 export const isTestnet = (networkKey) => {
   return networkKey !== "mainnet";
 };

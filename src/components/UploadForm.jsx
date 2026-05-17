@@ -33,22 +33,19 @@ export const UploadForm = () => {
   const [imageLoading, setImageLoading] = useState(false);
   const [result, setResult] = useState(null);
 
-  // Separate checkbox states for text and image
   const [textStoreOnBlockchain, setTextStoreOnBlockchain] = useState(false);
   const [imageStoreOnBlockchain, setImageStoreOnBlockchain] = useState(false);
 
   const [walletConnected, setWalletConnected] = useState(false);
   const [currentNetwork, setCurrentNetwork] = useState(null);
   const [gasEstimate, setGasEstimate] = useState(null);
-  const [txStatus, setTxStatus] = useState(null); // null, 'pending', 'confirmed', 'failed'
+  const [txStatus, setTxStatus] = useState(null);
   const [fileError, setFileError] = useState(null);
   const [loadingMessage, setLoadingMessage] = useState("");
   const { toast } = useToast();
 
-  // Ref for auto-scrolling to results
   const resultsRef = useRef(null);
 
-  // File validation function
   const validateFile = (file) => {
     const allowedTypes = [
       "image/jpeg",
@@ -77,7 +74,6 @@ export const UploadForm = () => {
     return { valid: true };
   };
 
-  // Text validation function
   const validateText = (text) => {
     const minLength = 10;
     const maxLength = 50000;
@@ -107,13 +103,11 @@ export const UploadForm = () => {
     return { valid: true };
   };
 
-  // Helper function to handle blockchain errors with user-friendly messages
   const handleBlockchainError = (error) => {
     console.error("Blockchain error:", error);
 
     // User rejected transaction
-    if (error.code === 4001 || error.code === "ACTION_REJECTED") {
-      return {
+    if (error.code === 4001 || error.code === "ACTION_REJECTED") {      return {
         title: "Transaction Cancelled",
         description:
           "You rejected the transaction. Click 'Authenticate' again to retry.",
@@ -121,7 +115,6 @@ export const UploadForm = () => {
       };
     }
 
-    // Insufficient funds
     if (
       error.message?.includes("insufficient funds") ||
       error.code === "INSUFFICIENT_FUNDS"
@@ -144,7 +137,6 @@ export const UploadForm = () => {
       };
     }
 
-    // Wrong network
     if (
       error.message?.includes("wrong network") ||
       error.code === "NETWORK_ERROR"
@@ -156,7 +148,6 @@ export const UploadForm = () => {
       };
     }
 
-    // Network congestion / timeout
     if (
       error.message?.includes("timeout") ||
       error.message?.includes("congestion")
@@ -169,7 +160,6 @@ export const UploadForm = () => {
       };
     }
 
-    // Contract not initialized
     if (error.message?.includes("Contract not initialized")) {
       return {
         title: "Contract Not Available",
@@ -179,7 +169,6 @@ export const UploadForm = () => {
       };
     }
 
-    // Record already exists
     if (error.message?.includes("Record already exists")) {
       return {
         title: "Already Verified",
@@ -189,7 +178,6 @@ export const UploadForm = () => {
       };
     }
 
-    // Generic error
     return {
       title: "Transaction Failed",
       description:
@@ -198,15 +186,12 @@ export const UploadForm = () => {
     };
   };
 
-  // Check wallet connection status on mount
   useEffect(() => {
     const initializeContractForNetwork = async () => {
       const status = blockchainService.getConnectionStatus();
-      console.log("🔍 Initial connection check:", status);
       setWalletConnected(status.isConnected);
       setCurrentNetwork(status.network);
 
-      // Initialize contract if wallet is connected
       if (status.isConnected && status.network) {
         const networkKey = blockchainService.getNetworkInfo(
           status.network.chainId
@@ -215,12 +200,10 @@ export const UploadForm = () => {
 
         if (contractAddress) {
           try {
-            // Small delay to ensure signer is ready
             await new Promise((resolve) => setTimeout(resolve, 100));
             blockchainService.initializeContract(CONTRACT_ABI, contractAddress);
-            console.log("✅ Contract initialized:", contractAddress);
           } catch (error) {
-            console.error("❌ Failed to initialize contract:", error);
+            console.error("Failed to initialize contract:", error);
             toast({
               title: "Contract Initialization Failed",
               description: "Please try reconnecting your wallet.",
@@ -229,7 +212,7 @@ export const UploadForm = () => {
           }
         } else {
           console.warn(
-            "⚠️ No contract address configured for network:",
+            "No contract address configured for network:",
             networkKey
           );
         }
@@ -238,11 +221,8 @@ export const UploadForm = () => {
 
     initializeContractForNetwork();
 
-    // Listen for wallet events
     const handleAccountChanged = async () => {
-      console.log("🔄 Account changed event received in UploadForm");
       const status = blockchainService.getConnectionStatus();
-      console.log("📊 Connection status:", status);
       setWalletConnected(status.isConnected);
       setCurrentNetwork(status.network);
 
@@ -253,17 +233,12 @@ export const UploadForm = () => {
         )?.key;
         const contractAddress = BLOCKCHAIN_CONFIG.CONTRACT_ADDRESS[networkKey];
 
-        console.log("🌐 Network key:", networkKey);
-        console.log("📝 Contract address:", contractAddress);
-
         if (contractAddress) {
           try {
-            // Small delay to ensure signer is ready after account change
             await new Promise((resolve) => setTimeout(resolve, 200));
             blockchainService.initializeContract(CONTRACT_ABI, contractAddress);
-            console.log("✅ Contract re-initialized after account change");
           } catch (error) {
-            console.error("❌ Failed to initialize contract:", error);
+            console.error("Failed to initialize contract:", error);
             toast({
               title: "Contract Initialization Failed",
               description: "Please try reconnecting your wallet.",
@@ -271,12 +246,9 @@ export const UploadForm = () => {
             });
           }
         } else {
-          console.warn("⚠️ No contract address for network:", networkKey);
-        }
-      }
-    };
-
-    const handleWalletDisconnected = () => {
+          console.warn("No contract address for network:", networkKey);
+        }      }
+    };    const handleWalletDisconnected = () => {
       setWalletConnected(false);
       setCurrentNetwork(null);
       setTextStoreOnBlockchain(false);
@@ -295,10 +267,8 @@ export const UploadForm = () => {
     };
   }, [toast]);
 
-  // Auto-scroll to results when they appear
   useEffect(() => {
     if (result && resultsRef.current) {
-      // Small delay to ensure the result card is rendered
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -308,7 +278,6 @@ export const UploadForm = () => {
     }
   }, [result]);
 
-  // Helper function to generate SHA-256 hash
   const generateContentHash = async (content) => {
     const encoder = new TextEncoder();
     const data = encoder.encode(content);
@@ -321,7 +290,6 @@ export const UploadForm = () => {
   };
 
   const handleTextSubmit = async () => {
-    // Validate text content
     const validation = validateText(textContent);
     if (!validation.valid) {
       toast({
@@ -338,13 +306,11 @@ export const UploadForm = () => {
     setLoadingMessage("Analyzing content...");
 
     try {
-      // Generate real content hash
       const contentHash = await generateContentHash(textContent);
 
-      // Run AI detection
       setLoadingMessage("Running AI detection...");
       toast({
-        title: "🔍 Analyzing Text...",
+        title: "Analyzing Text...",
         description: "Running AI detection analysis on your content.",
         variant: "info",
         duration: 3000,
@@ -352,7 +318,6 @@ export const UploadForm = () => {
 
       const detectionResult = await aiDetectionService.detectText(textContent);
 
-      // AI-generated content is NOT authentic (inverted logic)
       const isAuthentic = !detectionResult.isAiGenerated;
       const confidence = detectionResult.confidence * 100;
       const modelName = detectionResult.modelName;
@@ -360,10 +325,8 @@ export const UploadForm = () => {
 
       let blockchainData = null;
 
-      // Store on blockchain if option is enabled
       if (textStoreOnBlockchain && walletConnected) {
         try {
-          // Verify contract is initialized before proceeding
           if (!blockchainService.contract) {
             throw new Error(
               "Contract not initialized. Please reconnect your wallet."
@@ -373,7 +336,6 @@ export const UploadForm = () => {
           setTxStatus("pending");
           setLoadingMessage("Preparing blockchain transaction...");
 
-          // Estimate gas cost first
           const estimate = await blockchainService.estimateGasCost(
             contentHash,
             isAuthentic,
@@ -387,7 +349,6 @@ export const UploadForm = () => {
             description: "Please confirm the transaction in your wallet.",
           });
 
-          // Store verification record on blockchain
           setLoadingMessage("Storing on blockchain...");
           const txResult = await blockchainService.storeVerificationRecord(
             contentHash,
@@ -412,7 +373,6 @@ export const UploadForm = () => {
 
           const errorInfo = handleBlockchainError(blockchainError);
 
-          // Show error with action button if applicable
           toast({
             title: errorInfo.title,
             description: errorInfo.description,
@@ -447,7 +407,7 @@ export const UploadForm = () => {
 
       setResult(result);
       toast({
-        title: "✅ Analysis Complete",
+        title: "Analysis Complete",
         description: `Content authentication ${
           result.isAuthentic ? "successful" : "flagged potential issues"
         }.`,
@@ -457,7 +417,6 @@ export const UploadForm = () => {
     } catch (error) {
       console.error("Analysis error:", error);
 
-      // Determine error type and provide specific message
       let errorTitle = "Analysis Failed";
       let errorDescription =
         "Failed to authenticate content. Please try again.";
@@ -499,7 +458,6 @@ export const UploadForm = () => {
     setLoadingMessage("");
   };
 
-  // Helper function to generate hash from file
   const generateFileHash = async (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -549,10 +507,8 @@ export const UploadForm = () => {
     setLoadingMessage("Processing image...");
 
     try {
-      // Generate real content hash from image file
       const contentHash = await generateFileHash(imageFile);
 
-      // Run AI detection
       setLoadingMessage("Running AI detection...");
       toast({
         title: "Analyzing Image...",
@@ -561,7 +517,6 @@ export const UploadForm = () => {
 
       const detectionResult = await aiDetectionService.detectImage(imageFile);
 
-      // AI-generated content is NOT authentic (inverted logic)
       const isAuthentic = !detectionResult.isAiGenerated;
       const confidence = detectionResult.confidence * 100;
       const modelName = detectionResult.modelName;
@@ -569,10 +524,8 @@ export const UploadForm = () => {
 
       let blockchainData = null;
 
-      // Store on blockchain if option is enabled
       if (imageStoreOnBlockchain && walletConnected) {
         try {
-          // Verify contract is initialized before proceeding
           if (!blockchainService.contract) {
             throw new Error(
               "Contract not initialized. Please reconnect your wallet."
@@ -582,7 +535,6 @@ export const UploadForm = () => {
           setTxStatus("pending");
           setLoadingMessage("Preparing blockchain transaction...");
 
-          // Estimate gas cost first
           const estimate = await blockchainService.estimateGasCost(
             contentHash,
             isAuthentic,
@@ -596,7 +548,6 @@ export const UploadForm = () => {
             description: "Please confirm the transaction in your wallet.",
           });
 
-          // Store verification record on blockchain
           setLoadingMessage("Storing on blockchain...");
           const txResult = await blockchainService.storeVerificationRecord(
             contentHash,
@@ -621,7 +572,6 @@ export const UploadForm = () => {
 
           const errorInfo = handleBlockchainError(blockchainError);
 
-          // Show error with action button if applicable
           toast({
             title: errorInfo.title,
             description: errorInfo.description,
@@ -656,7 +606,7 @@ export const UploadForm = () => {
 
       setResult(result);
       toast({
-        title: "✓ Analysis Complete",
+        title: "Analysis Complete",
         description: `Image authentication ${
           result.isAuthentic ? "successful" : "flagged potential issues"
         }.`,
@@ -665,7 +615,6 @@ export const UploadForm = () => {
     } catch (error) {
       console.error("Analysis error:", error);
 
-      // Determine error type and provide specific message
       let errorTitle = "Analysis Failed";
       let errorDescription = "Failed to authenticate image. Please try again.";
 
@@ -732,8 +681,7 @@ export const UploadForm = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
-          {/* Text Upload Card */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -781,7 +729,7 @@ export const UploadForm = () => {
                             10 - textContent.trim().length
                           } more characters needed`
                         : textContent.trim().length >= 10
-                        ? "✓ Ready to authenticate"
+                        ? "Ready to authenticate"
                         : "Minimum 10 characters"}
                     </span>
                     <span
@@ -796,7 +744,6 @@ export const UploadForm = () => {
                   </div>
                 </div>
 
-                {/* Blockchain Storage Options */}
                 <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-border">
                   <div className="flex items-center space-x-3">
                     <Checkbox
@@ -928,7 +875,6 @@ export const UploadForm = () => {
             </Card>
           </motion.div>
 
-          {/* Image Upload Card */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -1015,7 +961,6 @@ export const UploadForm = () => {
                   </label>
                 </div>
 
-                {/* Blockchain Storage Options */}
                 <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-border">
                   <div className="flex items-center space-x-3">
                     <Checkbox
@@ -1148,7 +1093,6 @@ export const UploadForm = () => {
           </motion.div>
         </div>
 
-        {/* Results Section */}
         {result && (
           <motion.div
             ref={resultsRef}
