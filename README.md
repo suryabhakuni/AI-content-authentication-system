@@ -66,13 +66,16 @@ npm install
 1. **Frontend:** Create `.env` file:
 
 ```env
-VITE_API_URL=http://localhost:8000
+VITE_AI_DETECTION_API_URL=http://localhost:8000
+VITE_AI_DETECTION_ENABLED=true
 ```
 
 2. **Backend:** Create `backend/.env` file:
 
 ```env
-# Add your API keys if needed
+# Copy from backend/.env.example and customize if needed
+TEXT_MODEL=Hello-SimpleAI/chatgpt-detector-roberta
+IMAGE_MODEL=openai/clip-vit-base-patch32
 ```
 
 3. **Blockchain:** Create `blockchain/.env` file:
