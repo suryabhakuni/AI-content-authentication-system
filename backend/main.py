@@ -6,7 +6,7 @@ import os
 import logging
 import time
 import base64
-import urllib.request
+import requests
 import json
 from typing import Optional, Dict, Any
 
@@ -75,97 +75,99 @@ async def startup_event():
 
 
 def detect_text_via_hf_api(text: str) -> dict:
-    model_name = os.getenv("TEXT_MODEL", "Hello-SimpleAI/chatgpt-detector-roberta")
+    model_name = os.getenv("TEXT_MODEL", "Hello-SimpleAI/chatgpt-detector-roberta").strip()
     api_url = f"https://api-inference.huggingface.co/models/{model_name}"
     headers = {
-        "Authorization": f"Bearer {HF_API_KEY}",
+        "Authorization": f"Bearer {HF_API_KEY.strip()}",
         "Content-Type": "application/json"
     }
     payload = {"inputs": text}
     
-    req = urllib.request.Request(api_url, data=json.dumps(payload).encode("utf-8"), headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=30) as response:
-            res = json.loads(response.read().decode("utf-8"))
-            if isinstance(res, list) and len(res) > 0:
-                data = res[0] if isinstance(res[0], list) else res
-                ai_prob = 0.0
-                for item in data:
-                    label = item.get("label", "").upper()
-                    score = item.get("score", 0.0)
-                    if label == "LABEL_1" or "CHATGPT" in label or "AI" in label:
-                        ai_prob = score
-                        break
-                else:
-                    if len(data) == 2:
-                        ai_prob = data[1].get("score", 0.0)
-                    elif len(data) == 1:
-                        ai_prob = data[0].get("score", 0.0)
-                
-                return {
-                    "is_ai_generated": ai_prob > 0.5,
-                    "confidence": ai_prob,
-                    "model_name": f"hf-api/{model_name}"
-                }
+        response = requests.post(api_url, json=payload, headers=headers, timeout=30)
+        if response.status_code == 503:
+            return {"error": response.json().get("error", "Model is currently loading")}
+            
+        response.raise_for_status()
+        res = response.json()
+        
+        if isinstance(res, list) and len(res) > 0:
+            data = res[0] if isinstance(res[0], list) else res
+            ai_prob = 0.0
+            for item in data:
+                label = item.get("label", "").upper()
+                score = item.get("score", 0.0)
+                if label == "LABEL_1" or "CHATGPT" in label or "AI" in label:
+                    ai_prob = score
+                    break
             else:
-                return {"error": f"Unexpected API response format: {res}"}
-    except urllib.error.HTTPError as e:
+                if len(data) == 2:
+                    ai_prob = data[1].get("score", 0.0)
+                elif len(data) == 1:
+                    ai_prob = data[0].get("score", 0.0)
+            
+            return {
+                "is_ai_generated": ai_prob > 0.5,
+                "confidence": ai_prob,
+                "model_name": f"hf-api/{model_name}"
+            }
+        else:
+            return {"error": f"Unexpected API response format: {res}"}
+    except requests.exceptions.RequestException as e:
         try:
-            err_body = json.loads(e.read().decode("utf-8"))
-            err_msg = err_body.get("error", str(e))
+            err_msg = response.json().get("error", str(e))
         except Exception:
             err_msg = str(e)
         return {"error": err_msg}
-    except Exception as e:
-        return {"error": str(e)}
 
 
 def detect_image_via_hf_api(image_bytes: bytes) -> dict:
-    model_name = os.getenv("IMAGE_MODEL", "Organika/sdxl-detector")
+    model_name = os.getenv("IMAGE_MODEL", "Organika/sdxl-detector").strip()
     api_url = f"https://api-inference.huggingface.co/models/{model_name}"
     headers = {
-        "Authorization": f"Bearer {HF_API_KEY}"
+        "Authorization": f"Bearer {HF_API_KEY.strip()}"
     }
     
-    req = urllib.request.Request(api_url, data=image_bytes, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=30) as response:
-            res = json.loads(response.read().decode("utf-8"))
-            if isinstance(res, list) and len(res) > 0:
-                ai_prob = 0.0
-                for item in res:
-                    label = item.get("label", "").lower()
-                    score = item.get("score", 0.0)
-                    if label in ["artificial", "fake", "ai", "generated", "synth", "label_1"]:
-                        ai_prob = score
-                        break
-                else:
-                    first_label = res[0].get("label", "").lower()
-                    first_score = res[0].get("score", 0.0)
-                    if first_label in ["human", "real", "natural"]:
-                        ai_prob = 1.0 - first_score
-                    else:
-                        ai_prob = first_score
-                        
-                return {
-                    "is_ai_generated": ai_prob > 0.5,
-                    "confidence": ai_prob,
-                    "model_name": f"hf-api/{model_name}",
-                    "details": {
-                        "api_raw_response": res
-                    }
-                }
+        response = requests.post(api_url, data=image_bytes, headers=headers, timeout=30)
+        if response.status_code == 503:
+            return {"error": response.json().get("error", "Model is currently loading")}
+            
+        response.raise_for_status()
+        res = response.json()
+        
+        if isinstance(res, list) and len(res) > 0:
+            ai_prob = 0.0
+            for item in res:
+                label = item.get("label", "").lower()
+                score = item.get("score", 0.0)
+                if label in ["artificial", "fake", "ai", "generated", "synth", "label_1"]:
+                    ai_prob = score
+                    break
             else:
-                return {"error": f"Unexpected API response format: {res}"}
-    except urllib.error.HTTPError as e:
+                first_label = res[0].get("label", "").lower()
+                first_score = res[0].get("score", 0.0)
+                if first_label in ["human", "real", "natural"]:
+                    ai_prob = 1.0 - first_score
+                else:
+                    ai_prob = first_score
+                    
+            return {
+                "is_ai_generated": ai_prob > 0.5,
+                "confidence": ai_prob,
+                "model_name": f"hf-api/{model_name}",
+                "details": {
+                    "api_raw_response": res
+                }
+            }
+        else:
+            return {"error": f"Unexpected API response format: {res}"}
+    except requests.exceptions.RequestException as e:
         try:
-            err_body = json.loads(e.read().decode("utf-8"))
-            err_msg = err_body.get("error", str(e))
+            err_msg = response.json().get("error", str(e))
         except Exception:
             err_msg = str(e)
         return {"error": err_msg}
-    except Exception as e:
-        return {"error": str(e)}
 
 
 @app.get("/")
