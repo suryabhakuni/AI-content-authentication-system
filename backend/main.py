@@ -6,6 +6,8 @@ import os
 import logging
 import time
 import base64
+import urllib.request
+import json
 from typing import Optional, Dict, Any
 
 from models.text_detector import TextDetector
@@ -34,6 +36,9 @@ app.add_middleware(
 text_detector = None
 image_detector = None
 
+USE_HF_API = os.getenv("USE_HF_API", "false").lower() == "true"
+HF_API_KEY = os.getenv("HF_API_KEY", "")
+
 
 class TextDetectionRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=10000, description="Text to analyze")
@@ -56,6 +61,10 @@ class DetectionResponse(BaseModel):
 async def startup_event():
     global text_detector, image_detector
 
+    if USE_HF_API:
+        logger.info("USE_HF_API is enabled. Skipping local model loading to save memory.")
+        return
+
     try:
         logger.info("Loading AI detection models...")
         text_detector = TextDetector()
@@ -63,6 +72,100 @@ async def startup_event():
         logger.info("All models loaded successfully")
     except Exception as e:
         logger.error(f"Failed to load models: {e}")
+
+
+def detect_text_via_hf_api(text: str) -> dict:
+    model_name = os.getenv("TEXT_MODEL", "Hello-SimpleAI/chatgpt-detector-roberta")
+    api_url = f"https://api-inference.huggingface.co/models/{model_name}"
+    headers = {
+        "Authorization": f"Bearer {HF_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {"inputs": text}
+    
+    req = urllib.request.Request(api_url, data=json.dumps(payload).encode("utf-8"), headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as response:
+            res = json.loads(response.read().decode("utf-8"))
+            if isinstance(res, list) and len(res) > 0:
+                data = res[0] if isinstance(res[0], list) else res
+                ai_prob = 0.0
+                for item in data:
+                    label = item.get("label", "").upper()
+                    score = item.get("score", 0.0)
+                    if label == "LABEL_1" or "CHATGPT" in label or "AI" in label:
+                        ai_prob = score
+                        break
+                else:
+                    if len(data) == 2:
+                        ai_prob = data[1].get("score", 0.0)
+                    elif len(data) == 1:
+                        ai_prob = data[0].get("score", 0.0)
+                
+                return {
+                    "is_ai_generated": ai_prob > 0.5,
+                    "confidence": ai_prob,
+                    "model_name": f"hf-api/{model_name}"
+                }
+            else:
+                return {"error": f"Unexpected API response format: {res}"}
+    except urllib.error.HTTPError as e:
+        try:
+            err_body = json.loads(e.read().decode("utf-8"))
+            err_msg = err_body.get("error", str(e))
+        except Exception:
+            err_msg = str(e)
+        return {"error": err_msg}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def detect_image_via_hf_api(image_bytes: bytes) -> dict:
+    model_name = os.getenv("IMAGE_MODEL", "Organika/sdxl-detector")
+    api_url = f"https://api-inference.huggingface.co/models/{model_name}"
+    headers = {
+        "Authorization": f"Bearer {HF_API_KEY}"
+    }
+    
+    req = urllib.request.Request(api_url, data=image_bytes, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as response:
+            res = json.loads(response.read().decode("utf-8"))
+            if isinstance(res, list) and len(res) > 0:
+                ai_prob = 0.0
+                for item in res:
+                    label = item.get("label", "").lower()
+                    score = item.get("score", 0.0)
+                    if label in ["artificial", "fake", "ai", "generated", "synth", "label_1"]:
+                        ai_prob = score
+                        break
+                else:
+                    first_label = res[0].get("label", "").lower()
+                    first_score = res[0].get("score", 0.0)
+                    if first_label in ["human", "real", "natural"]:
+                        ai_prob = 1.0 - first_score
+                    else:
+                        ai_prob = first_score
+                        
+                return {
+                    "is_ai_generated": ai_prob > 0.5,
+                    "confidence": ai_prob,
+                    "model_name": f"hf-api/{model_name}",
+                    "details": {
+                        "api_raw_response": res
+                    }
+                }
+            else:
+                return {"error": f"Unexpected API response format: {res}"}
+    except urllib.error.HTTPError as e:
+        try:
+            err_body = json.loads(e.read().decode("utf-8"))
+            err_msg = err_body.get("error", str(e))
+        except Exception:
+            err_msg = str(e)
+        return {"error": err_msg}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @app.get("/")
@@ -83,8 +186,8 @@ async def health_check():
     return {
         "status": "healthy",
         "models": {
-            "text": "loaded" if text_detector else "not_loaded",
-            "image": "loaded" if image_detector else "not_loaded"
+            "text": "api" if USE_HF_API else ("loaded" if text_detector else "not_loaded"),
+            "image": "api" if USE_HF_API else ("loaded" if image_detector else "not_loaded")
         },
         "version": "1.0.0"
     }
@@ -92,7 +195,7 @@ async def health_check():
 
 @app.post("/api/detect/text", response_model=DetectionResponse)
 async def detect_text(request: TextDetectionRequest):
-    if not text_detector:
+    if not USE_HF_API and not text_detector:
         raise HTTPException(status_code=503, detail="Text detection model not loaded")
 
     start_time = time.time()
@@ -101,11 +204,17 @@ async def detect_text(request: TextDetectionRequest):
         if not request.text.strip():
             raise HTTPException(status_code=400, detail="Text cannot be empty")
 
-        result = text_detector.detect(request.text)
+        if USE_HF_API:
+            result = detect_text_via_hf_api(request.text)
+        else:
+            result = text_detector.detect(request.text)
+            
         processing_time = time.time() - start_time
 
         if "error" in result and result["error"]:
-            raise HTTPException(status_code=500, detail=result["error"])
+            error_msg = result["error"]
+            status_code = 503 if "loading" in error_msg.lower() else 500
+            raise HTTPException(status_code=status_code, detail=error_msg)
 
         return DetectionResponse(
             is_ai_generated=result["is_ai_generated"],
@@ -123,7 +232,7 @@ async def detect_text(request: TextDetectionRequest):
 
 @app.post("/api/detect/image", response_model=DetectionResponse)
 async def detect_image(request: ImageDetectionRequest):
-    if not image_detector:
+    if not USE_HF_API and not image_detector:
         raise HTTPException(status_code=503, detail="Image detection model not loaded")
 
     start_time = time.time()
@@ -143,11 +252,17 @@ async def detect_image(request: ImageDetectionRequest):
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid image data: {str(e)}")
 
-        result = image_detector.detect(image_bytes)
+        if USE_HF_API:
+            result = detect_image_via_hf_api(image_bytes)
+        else:
+            result = image_detector.detect(image_bytes)
+            
         processing_time = time.time() - start_time
 
         if "error" in result and result["error"]:
-            raise HTTPException(status_code=500, detail=result["error"])
+            error_msg = result["error"]
+            status_code = 503 if "loading" in error_msg.lower() else 500
+            raise HTTPException(status_code=status_code, detail=error_msg)
 
         return DetectionResponse(
             is_ai_generated=result["is_ai_generated"],
