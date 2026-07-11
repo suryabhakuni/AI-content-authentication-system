@@ -198,8 +198,8 @@ async def detect_text(request: TextDetectionRequest):
             
         processing_time = time.time() - start_time
 
-        if "error" in result and result["error"]:
-            error_msg = result["error"]
+        if "error" in result:
+            error_msg = result["error"] or "Unknown error occurred"
             status_code = 503 if "loading" in error_msg.lower() else 500
             raise HTTPException(status_code=status_code, detail=error_msg)
 
@@ -246,8 +246,8 @@ async def detect_image(request: ImageDetectionRequest):
             
         processing_time = time.time() - start_time
 
-        if "error" in result and result["error"]:
-            error_msg = result["error"]
+        if "error" in result:
+            error_msg = result["error"] or "Unknown error occurred"
             status_code = 503 if "loading" in error_msg.lower() else 500
             raise HTTPException(status_code=status_code, detail=error_msg)
 
