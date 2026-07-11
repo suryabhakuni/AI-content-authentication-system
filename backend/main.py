@@ -9,6 +9,7 @@ import base64
 import requests
 import json
 from typing import Optional, Dict, Any
+from huggingface_hub import InferenceClient
 
 from models.text_detector import TextDetector
 from models.image_detector import ImageDetector
@@ -76,35 +77,30 @@ async def startup_event():
 
 def detect_text_via_hf_api(text: str) -> dict:
     model_name = os.getenv("TEXT_MODEL", "Hello-SimpleAI/chatgpt-detector-roberta").strip()
-    api_url = f"https://api-inference.huggingface.co/models/{model_name}"
-    headers = {
-        "Authorization": f"Bearer {HF_API_KEY.strip()}",
-        "Content-Type": "application/json"
-    }
-    payload = {"inputs": text}
+    client = InferenceClient(token=HF_API_KEY.strip() if HF_API_KEY else None)
     
     try:
-        response = requests.post(api_url, json=payload, headers=headers, timeout=30)
-        if response.status_code == 503:
-            return {"error": response.json().get("error", "Model is currently loading")}
-            
-        response.raise_for_status()
-        res = response.json()
-        
+        res = client.text_classification(text, model=model_name)
         if isinstance(res, list) and len(res) > 0:
-            data = res[0] if isinstance(res[0], list) else res
             ai_prob = 0.0
-            for item in data:
-                label = item.get("label", "").upper()
-                score = item.get("score", 0.0)
+            for item in res:
+                if isinstance(item, dict):
+                    label = item.get("label", "").upper()
+                    score = item.get("score", 0.0)
+                else:
+                    label = getattr(item, "label", "").upper()
+                    score = getattr(item, "score", 0.0)
+                    
                 if label == "LABEL_1" or "CHATGPT" in label or "AI" in label:
                     ai_prob = score
                     break
             else:
-                if len(data) == 2:
-                    ai_prob = data[1].get("score", 0.0)
-                elif len(data) == 1:
-                    ai_prob = data[0].get("score", 0.0)
+                if len(res) == 2:
+                    second = res[1]
+                    ai_prob = second.get("score", 0.0) if isinstance(second, dict) else getattr(second, "score", 0.0)
+                elif len(res) == 1:
+                    first = res[0]
+                    ai_prob = first.get("score", 0.0) if isinstance(first, dict) else getattr(first, "score", 0.0)
             
             return {
                 "is_ai_generated": ai_prob > 0.5,
@@ -113,40 +109,33 @@ def detect_text_via_hf_api(text: str) -> dict:
             }
         else:
             return {"error": f"Unexpected API response format: {res}"}
-    except requests.exceptions.RequestException as e:
-        try:
-            err_msg = response.json().get("error", str(e))
-        except Exception:
-            err_msg = str(e)
-        return {"error": err_msg}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 def detect_image_via_hf_api(image_bytes: bytes) -> dict:
     model_name = os.getenv("IMAGE_MODEL", "Organika/sdxl-detector").strip()
-    api_url = f"https://api-inference.huggingface.co/models/{model_name}"
-    headers = {
-        "Authorization": f"Bearer {HF_API_KEY.strip()}"
-    }
+    client = InferenceClient(token=HF_API_KEY.strip() if HF_API_KEY else None)
     
     try:
-        response = requests.post(api_url, data=image_bytes, headers=headers, timeout=30)
-        if response.status_code == 503:
-            return {"error": response.json().get("error", "Model is currently loading")}
-            
-        response.raise_for_status()
-        res = response.json()
-        
+        res = client.image_classification(image_bytes, model=model_name)
         if isinstance(res, list) and len(res) > 0:
             ai_prob = 0.0
             for item in res:
-                label = item.get("label", "").lower()
-                score = item.get("score", 0.0)
+                if isinstance(item, dict):
+                    label = item.get("label", "").lower()
+                    score = item.get("score", 0.0)
+                else:
+                    label = getattr(item, "label", "").lower()
+                    score = getattr(item, "score", 0.0)
+                    
                 if label in ["artificial", "fake", "ai", "generated", "synth", "label_1"]:
                     ai_prob = score
                     break
             else:
-                first_label = res[0].get("label", "").lower()
-                first_score = res[0].get("score", 0.0)
+                first = res[0]
+                first_label = first.get("label", "").lower() if isinstance(first, dict) else getattr(first, "label", "").lower()
+                first_score = first.get("score", 0.0) if isinstance(first, dict) else getattr(first, "score", 0.0)
                 if first_label in ["human", "real", "natural"]:
                     ai_prob = 1.0 - first_score
                 else:
@@ -157,17 +146,13 @@ def detect_image_via_hf_api(image_bytes: bytes) -> dict:
                 "confidence": ai_prob,
                 "model_name": f"hf-api/{model_name}",
                 "details": {
-                    "api_raw_response": res
+                    "api_raw_response": str(res)
                 }
             }
         else:
             return {"error": f"Unexpected API response format: {res}"}
-    except requests.exceptions.RequestException as e:
-        try:
-            err_msg = response.json().get("error", str(e))
-        except Exception:
-            err_msg = str(e)
-        return {"error": err_msg}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @app.get("/")
