@@ -11,6 +11,7 @@ import Upload from "./pages/Upload";
 import Verify from "./pages/Verify";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
+import { Analytics } from "@vercel/analytics/react";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <Analytics />
         <BrowserRouter>
           <div className="min-h-screen flex flex-col">
             <Navbar />
